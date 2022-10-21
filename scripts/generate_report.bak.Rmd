@@ -1,0 +1,330 @@
+---
+title: "Single Cell Multiome ATAC + Gene Expression data QC"
+author: "Summary Reports"
+output:
+  html_document:
+    df_print: paged
+theme: cerulean
+params: 
+  patac_fragments: 5000
+  pfrip: 0.25
+  pnfeatureRNA_max: 3000000
+  pnfeatureRNA_min: 20
+  ppercentmt: 10
+  pnCountRNA: 100
+  pfeature: Top2a,Cenpe
+  summary_tb: "/Users/yingtianxie/Desktop/testData/f11summary.csv"
+  stats_mult_tb: "/Users/yingtianxie/Desktop/multQC/analysis/f11/mult_QC/f11.stats_mult.csv"
+  pwd: "/Users/yingtianxie/Desktop/multQC"
+  sampleName: f11
+---
+#### Sample: `r params$sampleName`
+
+```{r,echo=FALSE}
+#remotes::install_github('yihui/xfun')
+#embed_file() requires a few more packages
+#xfun::pkg_load2(c('htmltools', 'mime'))
+
+clust_n_atac<-length(list.files(paste(params$pwd,"/analysis/",params$sampleName,"/atac_QC/diff_analysis",sep = ""),pattern="*.csv"))
+clust_n_rna<-length(list.files(paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/diff_analysis",sep = ""),pattern="*.png"))
+```
+
+
+
+```{r htmlTemplate,echo=FALSE}
+#setwd("~/Desktop/")
+htmltools::img(src = knitr::image_uri("cfce.jpg"), 
+               alt = 'logo', 
+               style = 'position:absolute; top:0; left:0; padding:10px; width: 230px; height: 100px') 
+```
+
+
+***
+***
++ #### Top-level Metrics
+
+```{r,echo=FALSE,fig.keep='all',warning=FALSE,echo=FALSE,warn.conflicts = FALSE}
+pwd<-getwd()
+stats_mult<-read.csv(paste("../",params$stats_mult_tb,sep = ""))
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(kableExtra))
+suppressPackageStartupMessages(library(rmarkdown))
+suppressPackageStartupMessages(library(xfun))
+#t(stats_mult[,c(2,3,4,7)])%>%
+#  kable(col.names = NULL) %>%
+#  kable_paper("hover", full_width = F) %>%
+#  kable_styling(font_size = 12,position = "left") %>%
+#  column_spec(column = 1.5:2, width = "2.5in") %>% kable_classic_2(full_width = F)
+#Sys.setenv(RSTUDIO_PANDOC="/Applications/RStudio.app/Contents/MacOS/quarto/bin")
+
+stats_mult[1,c(2,3,4)] %>%
+  kable(col.names = c("Cell Number","Median UMIs per Barcode","Median genes per Barcode")) %>%
+  kable_styling(font_size = 24, position = "left", full_width = T) %>%
+  row_spec(0, font_size=16)
+
+```
+
+```{r,echo=FALSE,fig.keep='all',warning=FALSE}
+stats_mult[1,c(5,7)] %>%
+  kable(col.names = c("median fragments per cell","Median FriP per Barcode")) %>%
+  kable_styling(font_size = 24, position = "center", full_width = T) %>%
+  row_spec(0, font_size=16)
+```
+
++ #### Run Information
+```{r,echo=FALSE,fig.keep='all',warning=FALSE}
+#setwd("/Users/yingtianxie/Desktop/test/")
+#summary<-read.csv("/Users/yingtianxie/Desktop/test/summary.csv")
+summary<-read.csv(paste("../",params$summary_tb,sep = ""))
+summary<-as.data.frame(t(summary))
+#summary$info<-rownames(summary)
+summary$information<-summary$V1
+s_all<-cbind(row.names(summary),summary$information)
+colnames(s_all)<-c("Sample","Information")
+#knitr::kable(s_all[1:7,],row.names = F)
+suppressPackageStartupMessages(library(dplyr))
+suppressPackageStartupMessages(library(magrittr))
+suppressPackageStartupMessages(library(knitr))
+suppressPackageStartupMessages(library(kableExtra))
+s_all[c(1:3),] %>%
+  kable(col.names = NULL) %>%
+  kable_paper("hover", full_width = F) %>%
+  kable_styling(font_size = 14,position = "left") %>%
+  column_spec(column = 1.5:2, width = "2in") %>% kable_classic_2(full_width = F)
+```
+
++ #### ATAC Statistics
+```{r,echo=FALSE}
+source("functions.R")
+s_all[c(8:13,18:22,25),2]<-percent(as.numeric(s_all[c(8:13,18:22,25),2]))
+s_all[c(17,23),2]<-comprss(as.numeric(s_all[c(17,23),2]))
+
+ATAC<-s_all[c(8,9,11,12,16:25),]
+
+s_all[c(31,32:44,47,48),2]<-percent(as.numeric(s_all[c(31,32:44,47,48),2]))
+s_all[c(45,46),2]<-comprss(as.numeric(s_all[c(45,46),2]))
+
+RNA<-s_all[c(31:48),]
+
+ATAC %>%
+  kable(col.names = NULL,table.attr = "style='width:1=200%;'") %>%
+  kable_paper("hover", full_width = F) %>%
+  kable_styling(font_size = 14, position = "left") %>%
+  column_spec(column = 1.5:2, width = "2.5in")%>% kable_classic_2(full_width = F)
+```
+
++ #### RNA Statistics
+```{r,echo=FALSE}
+RNA %>%
+  kable(col.names = NULL,table.attr = "style='width:1=200%;'") %>%
+  kable_paper("hover", full_width = F) %>%
+  kable_styling(font_size = 14, position = "left") %>%
+  column_spec(column = 1.5:2, width = "2in")%>% kable_classic_2(full_width = F)
+```
+
++ #### Joint Cell Calling from Cellranger
+```{r,echo=F,out.width = "50px"}
+pwd<-getwd()
+
+#dirImg10x<-paste(pwd,"/",sampleName,"/joint_cell_calling/joint_cell_calling_10x.png",sep = "")
+dirImg10x<-paste(params$pwd,"/analysis/",params$sampleName,"/joint_cell_calling/",params$sampleName,".joint_cell_calling_10x.png", sep = "")
+```
+
+![](`r dirImg10x`){width=600px}
+
+> #### *Filter Threshold* <br />
+__________________________
+##### **RNA** <br />
+###### `r params$pnfeatureRNA_min` < genes per barcode < `r params$pnfeatureRNA_max` <br />
+###### mitochondrial reads per barcode < `r params$ppercentmt`  <br />
+###### UMIs per barcode > `r params$pnCountRNA` <br />
+##### **ATAC** <br />
+###### frip > `r params$pfrip` <br />
+###### fragments per barcode >  `r params$patac_fragments` <br />
+__________________________
+
++ #### Joint Cell Calling with Custom Threshold
+```{r,echo=F,out.width = "50px"}
+dirImgcust<-paste(params$pwd,"/analysis/",params$sampleName,"/joint_cell_calling/",params$sampleName,".joint_cell_calling_custom.png",sep = "")
+#knitr::include_graphics(paste(pwd,"/multiome_QC_results/joint_cell_calling/joint_cell_calling_custom.png",sep = ""))
+```
+
+![](`r dirImgcust`){width=600px}
+
++ #### High Quality Barcodes Overlap
+```{r,echo=F,out.height = "20px", out.width = "40px"}
+dirImg1<-paste(params$pwd,"/analysis/",params$sampleName,"/joint_cell_calling/",params$sampleName,".venn_diagram.png",sep = "")
+```
+![](`r dirImg1`){width=500px}
+
+- #### UMAP Colored by Category Shown in Venn Diagram
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg2<-paste(params$pwd,"/analysis/",params$sampleName,"/atac_QC/",params$sampleName,".atac_umap_byvennbarcode.png",sep = "")
+dirImg3<-paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".rna_umap_byvennbarcode.png",sep = "")
+```
+![](`r dirImg2`){width=400px} ![](`r dirImg3`){width=400px}
+
+## Results {.tabset}
+### ATAC
+
+> ##### frip > `r params$pfrip` <br />
+> ##### atac_fragments > `r params$patac_fragments` <br />
+
++ #### **Peak Targeting Plot**
+  - #### **Result from** *Cellranger* **(left)**  &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;*Custom Threshold* **(right)**
+
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg4<-paste(params$pwd,"/analysis/",params$sampleName,"/atac_QC/",params$sampleName,".peak_target.png",sep = "")
+```
+![](`r dirImg4`){width=800px}
+
++ #### **TSS Enrichment** and **Insert Size Distribution** 
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg5<-paste(params$pwd,"/analysis/",params$sampleName,"/atac_QC/",params$sampleName,".tss_insertsize.png",sep = "")
+```
+![](`r dirImg5`){width=800px}
+
++ ####  **Violin Plots for QC** 
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg6<-paste(params$pwd,"/analysis/",params$sampleName,"/atac_QC/",params$sampleName,".atac_qc_violin.png",sep = "")
+```
+![](`r dirImg6`){width=750px}
+
++ #### **ATAC UMAP  (colored by ATAC depth)**
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg7<-paste(params$pwd,"/analysis/",params$sampleName,"/atac_QC/",params$sampleName,".atac_umap_depth.png",sep = "")
+```
+![](`r dirImg7`){width=500px}
+
++ #### **Correlation between Depth and Reduced Dimension Components**
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg8<-paste(params$pwd,"/analysis/",params$sampleName,"/atac_QC/",params$sampleName,".atac_depthCor.png",sep = "")
+```
+![](`r dirImg8`){width=500px}
+
++ ####  **ATAC UMAP Colored by Cluster** 
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg9<-paste(params$pwd,"/analysis/",params$sampleName,"/atac_QC/",params$sampleName,".atac_umap_cluster.png",sep = "")
+xfun::embed_file(paste(params$pwd,"/analysis/",params$sampleName,"/atac_QC/",params$sampleName,".atac_coordinates.csv",sep = ""))
+```
+<br />
+![](`r dirImg9`){width=500px}
+
+
+
+### RNA
+
+> ##### `r params$pnfeatureRNA_min` < genes per barcode < `r params$pnfeatureRNA_max` <br />
+> ##### mitochondrial reads per barcode < `r params$ppercentmt`  <br />
+> ##### UMIs per barcode > `r params$pnCountRNA` <br />
+
+* ####  **Violin Plots for QC** 
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg10<-paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".rna_qc_violin.png",sep = "")
+```
+![](`r dirImg10`){width=700px}
+
+* #### **RNA QC Feature Correlation**
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg11<-paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".feature_cor.png",sep = "")
+```
+![](`r dirImg11`){width=600px}
+
+* #### **Highly Variable Features**
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg12<-paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".rna_highly_variable_gene.png",sep = "")
+```
+![](`r dirImg12`){width=400px}
+
+* #### **UMAP Colored by RNA Depth and UMAP Colored by Mitochondrial Reads Percentage**
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg13<-paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".rna_umap_depth.png",sep = "")
+dirImg17<-paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".rna_umap_mt_percent.png",sep = "")
+```
+![](`r dirImg13`){width=400px} ![](`r dirImg17`){width=400px}
+
+* #### **RNA UMAP Colored by Cluster**
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg14<-paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".rna_umap_cluster.png",sep = "")
+```
+
+```{r,echo=FALSE}
+xfun::embed_file(paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".rna_coordinates.csv",sep = ""))
+```
+
+
+![](`r dirImg14`){width=500px}
+
+* #### **RNA UMAP Colored by Marker Genes**
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg18<-paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".rna_ump_markergene.png",sep = "")
+```
+![](`r dirImg18`){width=800px}
+
+* #### **Marker Feature Expression**
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg19<-paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".rna_heatmap.png",sep = "")
+```
+![](`r dirImg19`){width=600px}
+
+* #### **Cell-Cycle Phase for Each Cluster**
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg15<-paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".rna_cell_cycle.png",sep = "")
+```
+![](`r dirImg15`){width=600px}
+
+* #### **UMAP Colored by Cell Cycle Phase**
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg16<-paste(params$pwd,"/analysis/",params$sampleName,"/rna_QC/",params$sampleName,".rna_umap_cell_cycle.png",sep = "")
+```
+![](`r dirImg16`){width=500px}
+
+### Joint
+* #### **Joint UMAP**
+```{r,echo=F,out.height = "20%", out.width = "20%"}
+dirImg20<-paste(params$pwd,"/analysis/",params$sampleName,"/mult_QC/",params$sampleName,".jointumap.png",sep = "")
+dirImg21<-paste(params$pwd,"/analysis/",params$sampleName,"/mult_QC/",params$sampleName,".jointumap_rna.png",sep = "")
+dirImg22<-paste(params$pwd,"/analysis/",params$sampleName,"/mult_QC/",params$sampleName,".jointumap_atac.png",sep = "")
+```
+![](`r dirImg20`){width=500px}
+
+```{r,echo=FALSE}
+xfun::embed_file(paste(params$pwd,"/analysis/",params$sampleName,"/mult_QC/",params$sampleName,".mult_coordinates.csv",sep = ""))
+```
+
+
+* #### **Joint UMAP - RNA**
+![](`r dirImg21`){width=800px}
+
+* #### **Joint UMAP - ATAC**
+![](`r dirImg22`){width=800px}
+
+* #### **Peak Gene Linkage**
+```{r,echo=FALSE,results='asis'}
+#dirImg23<-paste(pwd,"/",sampleName,"/mult/genometrack1.png",sep = "")
+#dirImg24<-paste(pwd,"/",sampleName,"/mult/genometrack2.png",sep = "")
+#dirImg25<-paste(pwd,"/",sampleName,"/mult/genometrack3.png",sep = "")
+#dirImg26<-paste(pwd,"/",sampleName,"/mult/genometrack4.png",sep = "")
+#dirImg27<-paste(pwd,"/",sampleName,"/mult/genometrack5.png",sep = "")
+#dirImg28<-paste(pwd,"/",sampleName,"/mult/genometrack6.png",sep = "")
+pfeature<-as.character(unlist(strsplit(params$pfeature,split = ",")))
+pfeature<-toupper(pfeature)
+feature_num<-length(pfeature)
+
+
+for (i in 1:feature_num) {
+  m<-knitr::include_graphics(paste(params$pwd,"/analysis/",params$sampleName,"/mult_QC/genometrack_",pfeature[i],".png",sep=""))
+  cat("![](",m,")")
+  cat("\n\n")
+}
+
+```
+
+
+
+
+
+
+

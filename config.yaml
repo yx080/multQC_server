@@ -1,0 +1,73 @@
+#Data type multiomic/scATAC/scRNA
+#dataType: multiomic
+
+#Location of metasheet
+metasheet: metasheet.csv
+
+#Assembly is needed for differential analysis, motif finding... etc
+# mm10/hg38
+assembly: mm10
+
+#Threshold to use when filtering barcodes
+#atac fragments per barcode 
+atac_fragments: 1000
+#minimum FRiP score
+frip: 0.4
+#maximum genes per barcode
+nfeatureRNA_max: 3000000
+#minimum genes per barcode
+nfeatureRNA_min: 80
+#maximum mitochondrial reads percentage per barcode
+percent_mt: 10
+#minimum UMIcat s per barcode
+nCountRNA: 500
+
+#Genes of interest
+#**First letter should be uppercase** 
+#feature: Psca, Krt5, Ar, Cd14, Krt8, d44
+feature: Gapdh,Plcb1
+
+#assign output directory
+#outputDir: ./Desktop/mult_qc/
+
+# sample names, e.g. "sample01" "sample02" can be any abitrary string
+# HOWEVER, these names must match what is in metasheet.csv
+# FOR each sample, define the path
+
+samples:
+  wt: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/WT/filtered_feature_bc_matrix.h5
+  k08: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K08/filtered_feature_bc_matrix.h5
+  #k021: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K021/filtered_feature_bc_matrix.h5
+
+frag:
+  wt: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/WT/atac_fragments.tsv.gz
+  k08: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K08/atac_fragments.tsv.gz
+  #k021: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K021/atac_fragments.tsv.gz
+
+frag_index:
+  wt: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/WT/atac_fragments.tsv.gz.tbi
+  k08: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K08/atac_fragments.tsv.gz.tbi
+  #k021: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K021/atac_fragments.tsv.gz.tbi
+
+perbcmtx:
+  wt: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/WT/per_barcode_metrics.csv
+  k08: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K08/per_barcode_metrics.csv
+  #k021: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K021/per_barcode_metrics.csv
+
+#.bai file should be with bam file
+bam:
+  f9: /Users/yingtianxie/Desktop/testData/f9atac_possorted_bam.bam
+  #f11: /Users/yingtianxie/Desktop/testData/f11atac_possorted_bam.bam
+  #pa: /Users/yingtianxie/Desktop/testData/paatac_possorted_bam.bam
+
+summary:
+  wt: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/WT/summary.csv
+  k08: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K08/summary.csv
+  #k021: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K021/summary.csv
+
+peaks:
+  wt: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/WT/atac_peaks.bed
+  k08: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K08/atac_peaks.bed
+  #k021: /mnt/cfce-stor3/projects/development2/multiomics_QC/input_files/NILAY/mult/K021/atac_peaks.bed
+
+  
